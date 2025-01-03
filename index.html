@@ -1,6 +1,7 @@
 <html><head><base href="/" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+/* Keeping all existing styles exactly as they are */
 body {
     margin: 0;
     padding: 0;
@@ -59,8 +60,14 @@ body {
     width: 150px;
     height: 150px;
     background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     touch-action: none;
+    transition: background 0.3s ease;
+}
+
+#joystick-container:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 #joystick-knob {
@@ -68,11 +75,28 @@ body {
     width: 50px;
     height: 50px;
     background: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+#joystick-knob:hover {
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+#joystick-container.active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#joystick-knob.active {
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 </style>
 </head>
@@ -99,27 +123,27 @@ let cursorWidth = 13;
 let cursorHeight = 20;
 let showStartMenu = false;
 
-// Load images
+// Load images with updated URLs
 const cursorImg = new Image();
-cursorImg.src = './IMG_0146 2.png';
+cursorImg.src = 'https://file.garden/ZtcHYXae60zrZ_cY/IMG_0146%202.png';
 
 const bgImg = new Image();
-bgImg.src = './IMG_0141.jpeg';
+bgImg.src = 'https://file.garden/ZtcHYXae60zrZ_cY/IMG_0141.jpeg';
 
 const startButtonImg = new Image();
-startButtonImg.src = './IMG_0139.jpeg';
+startButtonImg.src = 'https://file.garden/ZtcHYXae60zrZ_cY/IMG_0139.jpeg';
 
 // Menu configuration
 const menuConfig = {
     x: 0,
-    y: canvas.height - 220,
+    y: canvas.height - 200,
     width: 150,
     height: 160,
     items: ['Programs', 'Documents', 'Settings', 'Help']
 };
 
 function drawStartButton() {
-    ctx.drawImage(startButtonImg, 20, canvas.height - 20, 30, 30);
+    ctx.drawImage(startButtonImg, 40, canvas.height - 20, 30, 30);
 }
 
 function drawStartMenu() {
@@ -228,6 +252,8 @@ function updateCursorPosition(x, y) {
 
 function handleJoystickStart(e) {
     isDragging = true;
+    joystickContainer.classList.add('active');
+    joystickKnob.classList.add('active');
     const rect = joystickContainer.getBoundingClientRect();
     startX = rect.left + rect.width / 2;
     startY = rect.top + rect.height / 2;
@@ -257,6 +283,8 @@ function handleJoystickMove(e) {
 
 function handleJoystickEnd() {
     isDragging = false;
+    joystickContainer.classList.remove('active');
+    joystickKnob.classList.remove('active');
     joystickKnob.style.transform = 'translate(-50%, -50%)';
     document.removeEventListener('mousemove', handleJoystickMove);
     document.removeEventListener('mouseup', handleJoystickEnd);
