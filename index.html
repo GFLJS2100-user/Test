@@ -1,0 +1,340 @@
+<html><head><base href="/" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+.message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 10px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+}
+
+.touch-highlight {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#canvas-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 512px;
+    height: 512px;
+    border: 2px solid white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#imageCanvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#joystick-container {
+    position: fixed;
+    bottom: 50px;
+    left: 50px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    touch-action: none;
+}
+
+#joystick-knob {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+    <div class="message">Move your mouse, use the joystick, or touch the screen!</div>
+    <div class="touch-highlight"></div>
+    <div id="canvas-container">
+        <canvas id="imageCanvas" width="512" height="512"></canvas>
+    </div>
+    <div id="joystick-container">
+        <div id="joystick-knob"></div>
+    </div>
+
+<script>
+const touchHighlight = document.querySelector('.touch-highlight');
+const canvas = document.getElementById('imageCanvas');
+const ctx = canvas.getContext('2d');
+const joystickContainer = document.getElementById('joystick-container');
+const joystickKnob = document.getElementById('joystick-knob');
+
+let currentCursorX = window.innerWidth / 2;
+let currentCursorY = window.innerHeight / 2;
+let cursorWidth = 13;
+let cursorHeight = 20;
+let showStartMenu = false;
+
+// Load images
+const cursorImg = new Image();
+cursorImg.src = 'IMG_0146 2.png';
+
+const bgImg = new Image();
+bgImg.src = 'IMG_0141.jpeg';
+
+const startButtonImg = new Image();
+startButtonImg.src = 'IMG_0139.jpeg';
+
+// Menu configuration
+const menuConfig = {
+    x: 0,
+    y: canvas.height - 220,
+    width: 150,
+    height: 160,
+    items: ['Programs', 'Documents', 'Settings', 'Help']
+};
+
+function drawStartButton() {
+    ctx.drawImage(startButtonImg, 20, canvas.height - 20, 30, 30);
+}
+
+function drawStartMenu() {
+    if (showStartMenu) {
+        // Draw menu background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(menuConfig.x, menuConfig.y, menuConfig.width, menuConfig.height);
+        
+        // Draw menu items
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        menuConfig.items.forEach((item, index) => {
+            const itemY = menuConfig.y + 20 + (index * 35);
+            ctx.fillText(item, menuConfig.x + 10, itemY);
+        });
+    }
+}
+
+function drawScene() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw background image
+    const aspectRatio = bgImg.width / bgImg.height;
+    let drawWidth = 512;
+    let drawHeight = 512;
+    
+    if (aspectRatio > 1) {
+        drawHeight = 512 / aspectRatio;
+    } else {
+        drawWidth = 512 * aspectRatio;
+    }
+    
+    const x = (512 - drawWidth) / 2;
+    const y = (512 - drawHeight) / 2;
+    
+    ctx.drawImage(bgImg, x, y, drawWidth, drawHeight);
+
+    // Draw start button
+    drawStartButton();
+
+    // Draw start menu
+    drawStartMenu();
+
+    // Draw cursor last (on top)
+    const canvasRect = canvas.getBoundingClientRect();
+    const cursorX = currentCursorX - canvasRect.left;
+    const cursorY = currentCursorY - canvasRect.top;
+    ctx.drawImage(cursorImg, cursorX - cursorWidth/2, cursorY - cursorHeight/2, cursorWidth, cursorHeight);
+
+    requestAnimationFrame(drawScene);
+}
+
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Check if click is on start button
+    if (x >= 10 && x <= 50 && y >= canvas.height - 50 && y <= canvas.height - 10) {
+        showStartMenu = !showStartMenu;
+    }
+    // Close menu if clicking outside
+    else if (!(x >= menuConfig.x && x <= menuConfig.x + menuConfig.width &&
+             y >= menuConfig.y && y <= menuConfig.y + menuConfig.height)) {
+        showStartMenu = false;
+    }
+});
+
+// Keyboard controls for cursor size
+document.addEventListener('keydown', (e) => {
+    switch(e.key) {
+        case 'ArrowUp':
+            cursorHeight = Math.min(100, cursorHeight + 5);
+            break;
+        case 'ArrowDown':
+            cursorHeight = Math.max(10, cursorHeight - 5);
+            break;
+        case 'ArrowRight':
+            cursorWidth = Math.min(100, cursorWidth + 5);
+            break;
+        case 'ArrowLeft':
+            cursorWidth = Math.max(10, cursorWidth - 5);
+            break;
+    }
+});
+
+// Joystick variables and functions
+let isDragging = false;
+let startX, startY;
+const maxDistance = 50;
+let joystickInterval;
+
+function clampToCanvas(x, y) {
+    const canvasRect = canvas.getBoundingClientRect();
+    return {
+        x: Math.min(Math.max(x, canvasRect.left), canvasRect.right),
+        y: Math.min(Math.max(y, canvasRect.top), canvasRect.bottom)
+    };
+}
+
+function updateCursorPosition(x, y) {
+    const clamped = clampToCanvas(x, y);
+    currentCursorX = clamped.x;
+    currentCursorY = clamped.y;
+}
+
+function handleJoystickStart(e) {
+    isDragging = true;
+    const rect = joystickContainer.getBoundingClientRect();
+    startX = rect.left + rect.width / 2;
+    startY = rect.top + rect.height / 2;
+    
+    if (e.type === 'mousedown') {
+        document.addEventListener('mousemove', handleJoystickMove);
+        document.addEventListener('mouseup', handleJoystickEnd);
+    }
+    
+    startJoystickInterval();
+}
+
+function handleJoystickMove(e) {
+    if (!isDragging) return;
+    
+    const pointer = e.type.includes('touch') ? e.touches[0] : e;
+    const dx = pointer.clientX - startX;
+    const dy = pointer.clientY - startY;
+    const distance = Math.min(Math.sqrt(dx * dx + dy * dy), maxDistance);
+    const angle = Math.atan2(dy, dx);
+    
+    const knobX = Math.cos(angle) * distance;
+    const knobY = Math.sin(angle) * distance;
+    
+    joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+}
+
+function handleJoystickEnd() {
+    isDragging = false;
+    joystickKnob.style.transform = 'translate(-50%, -50%)';
+    document.removeEventListener('mousemove', handleJoystickMove);
+    document.removeEventListener('mouseup', handleJoystickEnd);
+    clearInterval(joystickInterval);
+}
+
+function startJoystickInterval() {
+    joystickInterval = setInterval(() => {
+        if (isDragging) {
+            const knobRect = joystickKnob.getBoundingClientRect();
+            const containerRect = joystickContainer.getBoundingClientRect();
+            const dx = (knobRect.left + knobRect.width/2) - (containerRect.left + containerRect.width/2);
+            const dy = (knobRect.top + knobRect.height/2) - (containerRect.top + containerRect.height/2);
+            
+            currentCursorX += dx * 0.1;
+            currentCursorY += dy * 0.1;
+            
+            updateCursorPosition(currentCursorX, currentCursorY);
+        }
+    }, 16);
+}
+
+// Event listeners
+joystickContainer.addEventListener('mousedown', handleJoystickStart);
+joystickContainer.addEventListener('touchstart', handleJoystickStart);
+joystickContainer.addEventListener('touchmove', handleJoystickMove);
+joystickContainer.addEventListener('touchend', handleJoystickEnd);
+
+const isTouchDevice = ('ontouchstart' in window) || 
+                     (navigator.maxTouchPoints > 0) || 
+                     (navigator.msMaxTouchPoints > 0);
+
+if (isTouchDevice) {
+    document.addEventListener('touchstart', (e) => {
+        if (e.target === joystickContainer || e.target === joystickKnob) return;
+        const touch = e.touches[0];
+        updateCursorPosition(touch.clientX, touch.clientY);
+        showTouchHighlight(touch.clientX, touch.clientY);
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (e.target === joystickContainer || e.target === joystickKnob) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        updateCursorPosition(touch.clientX, touch.clientY);
+        showTouchHighlight(touch.clientX, touch.clientY);
+    });
+
+    document.addEventListener('touchend', () => {
+        hideTouchHighlight();
+    });
+} else {
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) {
+            updateCursorPosition(e.clientX, e.clientY);
+        }
+    });
+}
+
+function showTouchHighlight(x, y) {
+    touchHighlight.style.opacity = '1';
+    touchHighlight.style.left = `${x - 20}px`;
+    touchHighlight.style.top = `${y - 20}px`;
+}
+
+function hideTouchHighlight() {
+    touchHighlight.style.opacity = '0';
+}
+
+// Start the animation when images are loaded
+bgImg.onload = function() {
+    cursorImg.onload = function() {
+        startButtonImg.onload = function() {
+            drawScene();
+        };
+    };
+};
+
+updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+</script>
+</body></html>
